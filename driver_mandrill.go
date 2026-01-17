@@ -230,9 +230,9 @@ func (d *MandrillDriver) doRequest(ctx context.Context, endpoint string, payload
 func (d *MandrillDriver) parseResponse(statusCode int, body []byte) (*Result, error) {
 	// Mandrill 返回数组格式
 	var responses []struct {
-		ID          string `json:"_id"`
-		Email       string `json:"email"`
-		Status      string `json:"status"`
+		ID           string `json:"_id"`
+		Email        string `json:"email"`
+		Status       string `json:"status"`
 		RejectReason string `json:"reject_reason"`
 	}
 
