@@ -1,6 +1,7 @@
 package email
 
 import (
+	"context"
 	"testing"
 )
 
@@ -67,11 +68,26 @@ func TestComponent_Name(t *testing.T) {
 	}
 }
 
+func TestComponent_DependsOn(t *testing.T) {
+	comp := NewComponent()
+	deps := comp.DependsOn()
+	if len(deps) != 2 {
+		t.Errorf("expected 2 dependencies, got %d", len(deps))
+	}
+	if deps[0] != "config" {
+		t.Errorf("expected first dependency 'config', got '%s'", deps[0])
+	}
+	if deps[1] != "logger" {
+		t.Errorf("expected second dependency 'logger', got '%s'", deps[1])
+	}
+}
+
 func TestComponent_Init_NoConfig(t *testing.T) {
 	comp := NewComponent()
 	loader := &MockConfigLoader{hasKey: false}
+	ctx := context.Background()
 
-	err := comp.Init(loader)
+	err := comp.Init(ctx, loader)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -88,12 +104,13 @@ func TestComponent_Init_NoConfig(t *testing.T) {
 func TestComponent_Start(t *testing.T) {
 	comp := NewComponent()
 	loader := &MockConfigLoader{hasKey: false}
+	ctx := context.Background()
 
-	if err := comp.Init(loader); err != nil {
+	if err := comp.Init(ctx, loader); err != nil {
 		t.Fatalf("init error: %v", err)
 	}
 
-	if err := comp.Start(); err != nil {
+	if err := comp.Start(ctx); err != nil {
 		t.Errorf("start error: %v", err)
 	}
 
@@ -105,23 +122,25 @@ func TestComponent_Start(t *testing.T) {
 func TestComponent_Stop(t *testing.T) {
 	comp := NewComponent()
 	loader := &MockConfigLoader{hasKey: false}
+	ctx := context.Background()
 
-	if err := comp.Init(loader); err != nil {
+	if err := comp.Init(ctx, loader); err != nil {
 		t.Fatalf("init error: %v", err)
 	}
-	if err := comp.Start(); err != nil {
+	if err := comp.Start(ctx); err != nil {
 		t.Fatalf("start error: %v", err)
 	}
-	if err := comp.Stop(); err != nil {
+	if err := comp.Stop(ctx); err != nil {
 		t.Errorf("stop error: %v", err)
 	}
 }
 
 func TestComponent_Stop_NotStarted(t *testing.T) {
 	comp := NewComponent()
+	ctx := context.Background()
 
 	// 未启动时 stop 应该安全
-	if err := comp.Stop(); err != nil {
+	if err := comp.Stop(ctx); err != nil {
 		t.Errorf("stop error: %v", err)
 	}
 }
@@ -140,11 +159,12 @@ func TestComponent_SetRegistry(t *testing.T) {
 func TestComponent_New(t *testing.T) {
 	comp := NewComponent()
 	loader := &MockConfigLoader{hasKey: false}
+	ctx := context.Background()
 
-	if err := comp.Init(loader); err != nil {
+	if err := comp.Init(ctx, loader); err != nil {
 		t.Fatalf("init error: %v", err)
 	}
-	if err := comp.Start(); err != nil {
+	if err := comp.Start(ctx); err != nil {
 		t.Fatalf("start error: %v", err)
 	}
 

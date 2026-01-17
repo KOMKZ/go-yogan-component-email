@@ -1,6 +1,8 @@
 package email
 
 import (
+	"context"
+
 	"github.com/KOMKZ/go-yogan-framework/component"
 	"github.com/KOMKZ/go-yogan-framework/logger"
 )
@@ -25,8 +27,13 @@ func (c *Component) Name() string {
 	return ComponentName
 }
 
+// DependsOn 声明依赖
+func (c *Component) DependsOn() []string {
+	return []string{"config", "logger"}
+}
+
 // Init 初始化组件
-func (c *Component) Init(loader component.ConfigLoader) error {
+func (c *Component) Init(ctx context.Context, loader component.ConfigLoader) error {
 	var cfg Config
 	if err := loader.Unmarshal(ComponentName, &cfg); err != nil {
 		// 配置不存在时使用默认配置
@@ -52,13 +59,13 @@ func (c *Component) Init(loader component.ConfigLoader) error {
 }
 
 // Start 启动组件
-func (c *Component) Start() error {
+func (c *Component) Start(ctx context.Context) error {
 	c.manager = NewManager(c.config, DefaultRegistry, c.logger)
 	return nil
 }
 
 // Stop 停止组件
-func (c *Component) Stop() error {
+func (c *Component) Stop(ctx context.Context) error {
 	if c.manager != nil {
 		return c.manager.Close()
 	}
