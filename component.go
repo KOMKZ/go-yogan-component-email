@@ -11,10 +11,9 @@ const ComponentName = "email"
 
 // Component 邮件组件
 type Component struct {
-	config   *Config
-	manager  *Manager
-	logger   *logger.CtxZapLogger
-	registry component.Registry
+	config  *Config
+	manager *Manager
+	logger  *logger.CtxZapLogger
 }
 
 // NewComponent 创建邮件组件
@@ -72,11 +71,10 @@ func (c *Component) Stop(ctx context.Context) error {
 	return nil
 }
 
-// SetRegistry 设置组件注册表
+// SetRegistry 设置组件注册表（已废弃，保留兼容性）
+// Deprecated: 使用 samber/do 进行依赖注入，无需 SetRegistry
 func (c *Component) SetRegistry(registry any) {
-	if r, ok := registry.(component.Registry); ok {
-		c.registry = r
-	}
+	// no-op: Registry 已废弃
 }
 
 // GetManager 获取邮件管理器
