@@ -3,173 +3,122 @@ package email
 import (
 	"context"
 	"testing"
+
+	"github.com/KOMKZ/go-yogan-framework/logger"
 )
 
-// MockConfigLoader 模拟配置加载器
-type MockConfigLoader struct {
-	data   map[string]any
-	hasKey bool
-}
-
-func (m *MockConfigLoader) Get(key string) interface{} {
-	if m.data != nil {
-		return m.data[key]
+func TestNewManager(t *testing.T) {
+	log := logger.GetLogger("test")
+	config := &Config{
+		Default: DriverMandrill,
+		Drivers: make(map[string]map[string]any),
 	}
-	return nil
-}
 
-func (m *MockConfigLoader) Unmarshal(key string, out any) error {
-	if !m.hasKey {
-		return nil // 模拟配置不存在
-	}
-	return nil
-}
-
-func (m *MockConfigLoader) GetString(key string) string {
-	if v, ok := m.data[key].(string); ok {
-		return v
-	}
-	return ""
-}
-
-func (m *MockConfigLoader) GetInt(key string) int {
-	if v, ok := m.data[key].(int); ok {
-		return v
-	}
-	return 0
-}
-
-func (m *MockConfigLoader) GetBool(key string) bool {
-	if v, ok := m.data[key].(bool); ok {
-		return v
-	}
-	return false
-}
-
-func (m *MockConfigLoader) IsSet(key string) bool {
-	if m.data == nil {
-		return false
-	}
-	_, ok := m.data[key]
-	return ok
-}
-
-func TestNewComponent(t *testing.T) {
-	comp := NewComponent()
-	if comp == nil {
-		t.Error("expected component, got nil")
-	}
-}
-
-func TestComponent_Name(t *testing.T) {
-	comp := NewComponent()
-	if comp.Name() != ComponentName {
-		t.Errorf("expected name '%s', got '%s'", ComponentName, comp.Name())
-	}
-}
-
-func TestComponent_DependsOn(t *testing.T) {
-	comp := NewComponent()
-	deps := comp.DependsOn()
-	if len(deps) != 2 {
-		t.Errorf("expected 2 dependencies, got %d", len(deps))
-	}
-	if deps[0] != "config" {
-		t.Errorf("expected first dependency 'config', got '%s'", deps[0])
-	}
-	if deps[1] != "logger" {
-		t.Errorf("expected second dependency 'logger', got '%s'", deps[1])
-	}
-}
-
-func TestComponent_Init_NoConfig(t *testing.T) {
-	comp := NewComponent()
-	loader := &MockConfigLoader{hasKey: false}
-	ctx := context.Background()
-
-	err := comp.Init(ctx, loader)
+	manager, err := NewManager(config, log, nil)
 	if err != nil {
-		t.Errorf("unexpected error: %v", err)
+		t.Fatalf("unexpected error: %v", err)
 	}
-
-	// 应该使用默认配置
-	if comp.config == nil {
-		t.Error("expected config, got nil")
-	}
-	if comp.config.Default != DriverMandrill {
-		t.Errorf("expected default driver '%s', got '%s'", DriverMandrill, comp.config.Default)
+	if manager == nil {
+		t.Fatal("expected manager, got nil")
 	}
 }
 
-func TestComponent_Start(t *testing.T) {
-	comp := NewComponent()
-	loader := &MockConfigLoader{hasKey: false}
-	ctx := context.Background()
+func TestNewManager_NilConfig(t *testing.T) {
+	log := logger.GetLogger("test")
 
-	if err := comp.Init(ctx, loader); err != nil {
-		t.Fatalf("init error: %v", err)
-	}
-
-	if err := comp.Start(ctx); err != nil {
-		t.Errorf("start error: %v", err)
-	}
-
-	if comp.GetManager() == nil {
-		t.Error("expected manager after start")
+	_, err := NewManager(nil, log, nil)
+	if err == nil {
+		t.Error("expected error for nil config")
 	}
 }
 
-func TestComponent_Stop(t *testing.T) {
-	comp := NewComponent()
-	loader := &MockConfigLoader{hasKey: false}
-	ctx := context.Background()
+func TestNewManager_NilLogger(t *testing.T) {
+	config := &Config{
+		Default: DriverMandrill,
+		Drivers: make(map[string]map[string]any),
+	}
 
-	if err := comp.Init(ctx, loader); err != nil {
-		t.Fatalf("init error: %v", err)
-	}
-	if err := comp.Start(ctx); err != nil {
-		t.Fatalf("start error: %v", err)
-	}
-	if err := comp.Stop(ctx); err != nil {
-		t.Errorf("stop error: %v", err)
+	_, err := NewManager(config, nil, nil)
+	if err == nil {
+		t.Error("expected error for nil logger")
 	}
 }
 
-func TestComponent_Stop_NotStarted(t *testing.T) {
-	comp := NewComponent()
-	ctx := context.Background()
-
-	// 未启动时 stop 应该安全
-	if err := comp.Stop(ctx); err != nil {
-		t.Errorf("stop error: %v", err)
-	}
-}
-
-func TestComponent_SetRegistry(t *testing.T) {
-	comp := NewComponent()
-
-	// 传入非 Registry 类型应该被忽略
-	comp.SetRegistry("not a registry")
-
-	if comp.registry != nil {
-		t.Error("expected nil registry for invalid type")
-	}
-}
-
-func TestComponent_New(t *testing.T) {
-	comp := NewComponent()
-	loader := &MockConfigLoader{hasKey: false}
-	ctx := context.Background()
-
-	if err := comp.Init(ctx, loader); err != nil {
-		t.Fatalf("init error: %v", err)
-	}
-	if err := comp.Start(ctx); err != nil {
-		t.Fatalf("start error: %v", err)
+func TestManager_NewBuilder(t *testing.T) {
+	log := logger.GetLogger("test")
+	config := &Config{
+		Default: DriverMandrill,
+		Drivers: make(map[string]map[string]any),
 	}
 
-	builder := comp.New()
+	manager, err := NewManager(config, log, nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	builder := manager.New()
 	if builder == nil {
 		t.Error("expected builder, got nil")
+	}
+}
+
+func TestManager_Shutdown(t *testing.T) {
+	log := logger.GetLogger("test")
+	config := &Config{
+		Default: DriverMandrill,
+		Drivers: make(map[string]map[string]any),
+	}
+
+	manager, err := NewManager(config, log, nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	err = manager.Shutdown()
+	if err != nil {
+		t.Errorf("shutdown error: %v", err)
+	}
+}
+
+func TestManager_GetDriver_NotFound(t *testing.T) {
+	log := logger.GetLogger("test")
+	config := &Config{
+		Default: DriverMandrill,
+		Drivers: make(map[string]map[string]any),
+	}
+
+	manager, err := NewManager(config, log, nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	_, err = manager.GetDriver("non-existent")
+	if err == nil {
+		t.Error("expected error for non-existent driver")
+	}
+}
+
+func TestBuilder_Send_NoDriver(t *testing.T) {
+	log := logger.GetLogger("test")
+	config := &Config{
+		Default: DriverMandrill,
+		Drivers: make(map[string]map[string]any),
+	}
+
+	manager, err := NewManager(config, log, nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	builder := manager.New()
+	_, err = builder.
+		To("test@example.com").
+		Subject("Test").
+		Body("<p>Test</p>").
+		Send(context.Background())
+
+	// 应该报错因为没有配置驱动
+	if err == nil {
+		t.Error("expected error when no driver configured")
 	}
 }

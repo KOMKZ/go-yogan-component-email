@@ -3,9 +3,13 @@ package email
 import (
 	"context"
 	"testing"
+
+	"github.com/KOMKZ/go-yogan-framework/logger"
 )
 
 func TestBuilder_ChainedCalls(t *testing.T) {
+	log := logger.GetLogger("test")
+
 	// 创建模拟驱动
 	mockDriver := &MockDriver{
 		name: "mock",
@@ -33,7 +37,10 @@ func TestBuilder_ChainedCalls(t *testing.T) {
 	}
 
 	// 创建管理器
-	manager := NewManager(config, registry, nil)
+	manager, err := NewManager(config, log, registry)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	// 测试链式调用
 	result, err := manager.New().
@@ -57,6 +64,8 @@ func TestBuilder_ChainedCalls(t *testing.T) {
 }
 
 func TestBuilder_DefaultFrom(t *testing.T) {
+	log := logger.GetLogger("test")
+
 	mockDriver := &MockDriver{
 		name:       "mock",
 		sendResult: &Result{Success: true},
@@ -76,7 +85,10 @@ func TestBuilder_DefaultFrom(t *testing.T) {
 		},
 	}
 
-	manager := NewManager(config, registry, nil)
+	manager, err := NewManager(config, log, registry)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	builder := manager.New().
 		To("user@example.com").
@@ -97,6 +109,8 @@ func TestBuilder_DefaultFrom(t *testing.T) {
 }
 
 func TestBuilder_OverrideFrom(t *testing.T) {
+	log := logger.GetLogger("test")
+
 	mockDriver := &MockDriver{
 		name:       "mock",
 		sendResult: &Result{Success: true},
@@ -115,7 +129,10 @@ func TestBuilder_OverrideFrom(t *testing.T) {
 		},
 	}
 
-	manager := NewManager(config, registry, nil)
+	manager, err := NewManager(config, log, registry)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	builder := manager.New().
 		From("custom@example.com").
@@ -132,6 +149,8 @@ func TestBuilder_OverrideFrom(t *testing.T) {
 }
 
 func TestBuilder_Attachments(t *testing.T) {
+	log := logger.GetLogger("test")
+
 	mockDriver := &MockDriver{
 		name:       "mock",
 		sendResult: &Result{Success: true},
@@ -149,7 +168,10 @@ func TestBuilder_Attachments(t *testing.T) {
 		},
 	}
 
-	manager := NewManager(config, registry, nil)
+	manager, err := NewManager(config, log, registry)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	builder := manager.New().
 		To("user@example.com").
@@ -178,6 +200,8 @@ func TestBuilder_Attachments(t *testing.T) {
 }
 
 func TestBuilder_SwitchDriver(t *testing.T) {
+	log := logger.GetLogger("test")
+
 	mockDriver1 := &MockDriver{
 		name:       "driver1",
 		sendResult: &Result{MessageID: "from-driver1", Success: true},
@@ -203,7 +227,10 @@ func TestBuilder_SwitchDriver(t *testing.T) {
 		},
 	}
 
-	manager := NewManager(config, registry, nil)
+	manager, err := NewManager(config, log, registry)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	// 使用默认驱动
 	result1, _ := manager.New().

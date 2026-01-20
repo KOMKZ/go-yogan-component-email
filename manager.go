@@ -1,6 +1,7 @@
 package email
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/KOMKZ/go-yogan-framework/logger"
@@ -17,16 +18,34 @@ type Manager struct {
 }
 
 // NewManager 创建邮件管理器
-func NewManager(config *Config, registry *Registry, log *logger.CtxZapLogger) *Manager {
+// config: 邮件配置（必需）
+// logger: 业务日志器（必需）
+// registry: 驱动注册表（可选，为 nil 时使用 DefaultRegistry）
+func NewManager(config *Config, log *logger.CtxZapLogger, registry *Registry) (*Manager, error) {
+	if config == nil {
+		return nil, fmt.Errorf("email config cannot be nil")
+	}
+	if log == nil {
+		return nil, fmt.Errorf("logger cannot be nil")
+	}
 	if registry == nil {
 		registry = DefaultRegistry
 	}
+
+	// 应用默认值并验证
+	config.ApplyDefaults()
+	if len(config.Drivers) > 0 {
+		if err := config.Validate(); err != nil {
+			return nil, fmt.Errorf("invalid email config: %w", err)
+		}
+	}
+
 	return &Manager{
 		config:   config,
 		registry: registry,
 		drivers:  make(map[string]Driver),
 		logger:   log,
-	}
+	}, nil
 }
 
 // GetDriver 获取驱动实例
@@ -85,6 +104,12 @@ func (m *Manager) Close() error {
 
 	m.drivers = make(map[string]Driver)
 	return nil
+}
+
+// Shutdown 实现 samber/do.Shutdownable 接口
+// 用于在 DI 容器关闭时自动关闭资源
+func (m *Manager) Shutdown() error {
+	return m.Close()
 }
 
 // Config 获取配置

@@ -9,6 +9,7 @@
 - 🔧 **配置驱动**：YAML 配置切换厂商
 - 📎 **附件支持**：普通附件和内联图片
 - 🎯 **职责清晰**：专注驱动层，不含模板/异步
+- 💉 **依赖注入**：通过 samber/do 进行 DI 注册
 
 ## 安装
 
@@ -32,20 +33,29 @@ email:
       api_key: "${MANDRILL_API_KEY}"
 ```
 
-### 2. 注册组件
+### 2. 注册到 DI 容器
 
 ```go
-import "github.com/KOMKZ/go-yogan-component-email"
+import (
+    "github.com/KOMKZ/go-yogan-component-email"
+    "github.com/samber/do/v2"
+)
 
-app.RegisterComponent(email.NewComponent())
+// 加载配置
+var emailConfig email.Config
+loader.Unmarshal("email", &emailConfig)
+
+// 注册到 DI 容器
+email.ProvideManager(injector, &emailConfig)
 ```
 
 ### 3. 发送邮件
 
 ```go
-emailComp := apputil.MustComponent[*email.Component](app, email.ComponentName)
+// 从 DI 容器获取
+manager := do.MustInvoke[*email.Manager](injector)
 
-result, err := emailComp.New().
+result, err := manager.New().
     To("user@example.com").
     Subject("Welcome").
     Body("<h1>Hello World</h1>").
@@ -55,7 +65,7 @@ result, err := emailComp.New().
 ## 链式 API
 
 ```go
-result, err := emailComp.New().
+result, err := manager.New().
     Driver("mandrill").              // 指定驱动（可选）
     From("custom@example.com").      // 发件人地址
     FromName("Custom Sender").       // 发件人名称
@@ -123,7 +133,7 @@ email:
 ## 错误处理
 
 ```go
-result, err := emailComp.New().
+result, err := manager.New().
     To("user@example.com").
     Subject("Test").
     Body("Hello").
@@ -151,7 +161,7 @@ html, err := templateEngine.Render("welcome", map[string]any{
 })
 
 // 2. 使用邮件组件发送
-_, err = emailComp.New().
+_, err = manager.New().
     To(user.Email).
     Subject("Welcome").
     Body(html).
