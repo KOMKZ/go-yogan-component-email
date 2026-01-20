@@ -1,10 +1,90 @@
 package email
 
 import (
+	"context"
 	"testing"
 
 	"github.com/KOMKZ/go-yogan-framework/logger"
 )
+
+func TestNewManager_Valid(t *testing.T) {
+	log := logger.GetLogger("test")
+	config := &Config{
+		Default: DriverMandrill,
+		Drivers: make(map[string]map[string]any),
+	}
+
+	manager, err := NewManager(config, log, nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if manager == nil {
+		t.Fatal("expected manager, got nil")
+	}
+}
+
+func TestNewManager_NilConfig(t *testing.T) {
+	log := logger.GetLogger("test")
+
+	_, err := NewManager(nil, log, nil)
+	if err == nil {
+		t.Error("expected error for nil config")
+	}
+}
+
+func TestNewManager_NilLogger(t *testing.T) {
+	config := &Config{
+		Default: DriverMandrill,
+		Drivers: make(map[string]map[string]any),
+	}
+
+	_, err := NewManager(config, nil, nil)
+	if err == nil {
+		t.Error("expected error for nil logger")
+	}
+}
+
+func TestManager_Shutdown(t *testing.T) {
+	log := logger.GetLogger("test")
+	config := &Config{
+		Default: DriverMandrill,
+		Drivers: make(map[string]map[string]any),
+	}
+
+	manager, err := NewManager(config, log, nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	err = manager.Shutdown()
+	if err != nil {
+		t.Errorf("shutdown error: %v", err)
+	}
+}
+
+func TestBuilder_Send_NoDriver(t *testing.T) {
+	log := logger.GetLogger("test")
+	config := &Config{
+		Default: DriverMandrill,
+		Drivers: make(map[string]map[string]any),
+	}
+
+	manager, err := NewManager(config, log, nil)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	builder := manager.New()
+	_, err = builder.
+		To("test@example.com").
+		Subject("Test").
+		Body("<p>Test</p>").
+		Send(context.Background())
+
+	if err == nil {
+		t.Error("expected error when no driver configured")
+	}
+}
 
 func TestManager_GetDriver(t *testing.T) {
 	log := logger.GetLogger("test")

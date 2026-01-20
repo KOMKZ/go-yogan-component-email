@@ -2,6 +2,9 @@ package email
 
 import "fmt"
 
+// ComponentName 组件名称（用于配置 key）
+const ComponentName = "email"
+
 // Config 邮件组件配置
 type Config struct {
 	// Default 默认驱动名称
