@@ -7,7 +7,7 @@ import (
 )
 
 // ComponentCode 组件错误码前缀
-const ComponentCode = 31
+const ComponentCode = 51
 
 var (
 	// ErrDriverNotFound 驱动未找到
